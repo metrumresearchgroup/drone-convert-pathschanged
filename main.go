@@ -24,6 +24,7 @@ type spec struct {
 	Secret string `envconfig:"DRONE_SECRET"`
 
 	Provider         string `envconfig:"PROVIDER"`
+	ProviderURI		 string `envconfig:"PROVIDER_URI"`
 	Token            string `envconfig:"TOKEN"`
 	BitBucketAddress string `envconfig:"BB_ADDRESS"`
 }
@@ -77,6 +78,7 @@ func main() {
 		plugin.New(
 			spec.Token,
 			spec.Provider,
+			spec.ProviderURI,
 		),
 		spec.Secret,
 		logrus.StandardLogger(),
