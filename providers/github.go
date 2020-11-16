@@ -47,6 +47,42 @@ func GetGithubFilesChanged(repo drone.Repo, build drone.Build, token string) ([]
 	return files, nil
 }
 
+func GetGithubEnterpriseFilesChanged(repo drone.Repo, build drone.Build, token string, uri string) ([]string, error) {
+	newctx := context.Background()
+	client, err := github.New(uri); if err != nil {
+		return []string{}, err
+	}
+	client.Client = &http.Client{
+		Transport: &transport.BearerToken{
+			Token: token,
+		},
+	}
+
+	var changes []*scm.Change
+	var result *scm.Response
+
+	if build.Before == "" || build.Before == scm.EmptyCommit {
+		changes, result, err = client.Git.ListChanges(newctx, repo.Slug, build.After, scm.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		changes, result, err = client.Git.CompareChanges(newctx, repo.Slug, build.Before, build.After, scm.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	GithubApiCount.Set(float64(result.Rate.Remaining))
+
+	var files []string
+	for _, c := range changes {
+		files = append(files, c.Path)
+	}
+
+	return files, nil
+}
+
 var (
 	GithubApiCount = prometheus.NewGauge(
 		prometheus.GaugeOpts{
